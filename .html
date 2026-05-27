@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Aura</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .option { 
+      transition: all 0.3s; 
+      background-color: #27272a;
+    }
+    .option:hover { 
+      transform: scale(1.05); 
+      background-color: #3f3f46;
+    }
+    .correct { background-color: #22c55e !important; color: black; }
+    .wrong { background-color: #ef4444 !important; color: white; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-zinc-950 via-slate-900 to-neutral-950 text-white min-h-screen">
+
+  <div class="max-w-2xl mx-auto p-4">
+
+    <!-- Tela Inicial -->
+    <div id="start-screen" class="text-center py-20">
+      <h1 class="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+        QUIZ AURA
+      </h1>
+      <p class="text-2xl mb-10 text-slate-300">Teste se vc é um betinha ou um alfa!</p>
+      <button onclick="startQuiz()" 
+              class="bg-yellow-400 hover:bg-yellow-300 text-black text-3xl font-bold py-6 px-16 rounded-2xl shadow-lg transition">
+        INICIAR QUIZ
+      </button>
+    </div>
+
+    <!-- Tela do Quiz -->
+    <div id="quiz-screen" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <div class="text-xl">Pontos: <span id="score" class="font-bold text-yellow-400">0</span></div>
+        <div class="text-xl">Pergunta <span id="current-q" class="font-bold">1</span>/10</div>
+        <div id="timer" class="text-2xl font-bold text-amber-400">30</div>
+      </div>
+
+      <div class="bg-zinc-900/70 backdrop-blur-md border border-zinc-700 rounded-3xl p-8 mb-8">
+        <h2 id="question" class="text-2xl font-semibold mb-10 text-center min-h-[120px]"></h2>
+        
+        <div id="options" class="grid grid-cols-2 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center">
+      <div class="bg-zinc-800 text-white rounded-3xl p-10 max-w-md text-center border border-zinc-700">
+        <h3 id="feedback-title" class="text-4xl font-bold mb-4"></h3>
+        <p id="feedback-text" class="text-xl mb-6"></p>
+        <button onclick="nextQuestion()" 
+                class="bg-yellow-500 hover:bg-yellow-400 text-black px-10 py-4 rounded-2xl text-xl font-bold">
+          Próxima pergunta
+        </button>
+      </div>
+    </div>
+
+    <!-- Tela Final -->
+    <div id="end-screen" class="hidden text-center py-20">
+      <h1 class="text-5xl font-bold mb-6">Finalmente acabou!</h1>
+      <div class="text-7xl mb-4">🏆</div>
+      <p class="text-3xl mb-2 text-slate-300">Sua pontuação:</p>
+      <p id="final-score" class="text-8xl font-bold text-yellow-400 mb-8">0</p>
+      <button onclick="restartQuiz()" 
+              class="bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-bold py-5 px-12 rounded-2xl">
+        Jogar Novamente
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        question: "Qual figura de linguagem está presente em: 'Seus olhos são dois sóis'?",
+        options: ["Metáfora", "Comparação", "Metonímia", "Sinestesia"],
+        answer: 0
+      },
+      {
+        question: "Em 'O vento sussurrava segredos', o recurso usado é:",
+        options: ["Personificação", "Aliteração", "Onomatopeia", "Hipérbole"],
+        answer: 0
+      },
+      {
+        question: "Qual palavra está sendo usada com sentido figurado: 'Ele tem um coração de pedra'?",
+        options: ["Coração", "Pedra", "Tem", "Ele"],
+        answer: 1
+      },
+      {
+        question: "'Tristeza não paga dívida' é um exemplo de:",
+        options: ["Antítese", "Pleonasmo", "Ironia", "Paradoxo"],
+        answer: 3
+      },
+      {
+        question: "Em 'Choveu muito', o verbo 'chover' está no sentido:",
+        options: ["Literal", "Figurado", "Conotativo", "Denotativo"],
+        answer: 3
+      },
+      {
+        question: "Qual é o recurso: 'O silêncio gritava em meus ouvidos'?",
+        options: ["Oxímoro", "Sinestesia", "Anáfora", "Assonância"],
+        answer: 1
+      },
+      {
+        question: "'Brasil' usado para representar a Seleção Brasileira é:",
+        options: ["Metonímia", "Metáfora", "Comparação", "Sinédoque"],
+        answer: 0
+      },
+      {
+        question: "Em 'Eu te amo do tamanho do mundo', temos:",
+        options: ["Metáfora", "Hipérbole", "Eufemismo", "Litote"],
+        answer: 1
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let timerInterval;
+
+    function startQuiz() {
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('quiz-screen').classList.remove('hidden');
+      currentQuestion = 0;
+      score = 0;
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      
+      document.getElementById('current-q').textContent = currentQuestion + 1;
+      document.getElementById('score').textContent = score;
+      document.getElementById('question').textContent = q.question;
+
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+
+      q.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = `option text-white text-xl font-medium py-6 px-8 rounded-2xl`;
+        btn.textContent = option;
+        btn.onclick = () => selectAnswer(index);
+        optionsDiv.appendChild(btn);
+      });
+
+      startTimer();
+    }
+
+    function startTimer() {
+      let time = 30;
+      document.getElementById('timer').textContent = time;
+      
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        time--;
+        document.getElementById('timer').textContent = time;
+        if (time <= 0) {
+          clearInterval(timerInterval);
+          showFeedback(false);
+        }
+      }, 1000);
+    }
+
+    function selectAnswer(selectedIndex) {
+      clearInterval(timerInterval);
+      const correct = questions[currentQuestion].answer;
+      showFeedback(selectedIndex === correct);
+    }
+
+    function showFeedback(isCorrect) {
+      const feedback = document.getElementById('feedback');
+      const title = document.getElementById('feedback-title');
+      const text = document.getElementById('feedback-text');
+
+      if (isCorrect) {
+        score += 100;
+        title.textContent = "Minimo..";
+        title.className = "text-4xl font-bold mb-4 text-green-500";
+        text.textContent = "nada mais que a sua obrigação";
+      } else {
+        title.textContent = "Estou decepcionado...";
+        title.className = "text-4xl font-bold mb-4 text-red-500";
+        text.textContent = `Obviamente a resposta era: ${questions[currentQuestion].options[questions[currentQuestion].answer]}`;
+      }
+
+      feedback.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      document.getElementById('feedback').classList.add('hidden');
+      
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+      } else {
+        endQuiz();
+      }
+    }
+
+    function endQuiz() {
+      document.getElementById('quiz-screen').classList.add('hidden');
+      document.getElementById('end-screen').classList.remove('hidden');
+      document.getElementById('final-score').textContent = score;
+    }
+
+    function restartQuiz() {
+      document.getElementById('end-screen').classList.add('hidden');
+      document.getElementById('start-screen').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
